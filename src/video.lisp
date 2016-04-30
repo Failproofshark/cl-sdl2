@@ -34,6 +34,13 @@
                  (display-mode :h)
                  (display-mode :refresh-rate))))
 
+(defun get-display-bounds (display-index)
+  "Use this function to get the desktop area represented by a display, with the primary display located at 0,0."
+  (let-rects (rect)
+    (check-rc
+     (sdl2-ffi.functions:sdl-get-display-bounds display-index (rect &)))
+    rect))
+
 (autowrap:define-bitmask-from-enum
     (sdl-window-flags sdl2-ffi:sdl-window-flags)
   '(:centered . #x0))
@@ -117,9 +124,20 @@
 (defun set-window-title (win title)
   (sdl-set-window-title win title))
 
-(defun set-window-fullscreen (win fullscreen-p)
-  (let ((fs (if fullscreen-p 1 0)))
-    (check-rc (sdl-set-window-fullscreen win fs))))
+(autowrap:define-enum-from-constants (sdl-window-fullscreen "SDL-WINDOW-")
+  sdl2-ffi:+sdl-window-fullscreen+
+  sdl2-ffi:+sdl-window-fullscreen-desktop+)
+
+(defun set-window-fullscreen (win fullscreen-value)
+  "`FULLSCREEN-VALUE` of `t` or `:fullscreen` is \"regular\" fullscreen,
+`SDL_WINDOW_FULLSCREEN`.  Specifying `:windowed` or `:desktop` is
+\"windowed\" fullscreen, using `SDL_WINDOW_FULLSCREEN_DESKTOP`."
+  (let ((flag (case fullscreen-value
+                ((nil))
+                ((:desktop :windowed) :fullscreen-desktop)
+                ((t :fullscreen) :fullscreen))))
+    (check-rc (sdl-set-window-fullscreen
+               win (if flag (enum-value 'sdl-window-fullscreen flag) 0)))))
 
 (defun set-window-size (win w h)
   (sdl-set-window-size win w h))
@@ -144,13 +162,20 @@
     (sdl-get-window-size win width height)
     (values (mem-ref width :int) (mem-ref height :int))))
 
+(defun get-window-aspect-ratio (win)
+  (multiple-value-call #'/ (get-window-size win)))
+
 (defun get-window-surface (win)
   ;; Do NOT free the returned surface.
-  (sdl-get-window-surface win))
+  (check-null (sdl-get-window-surface win)))
 
 (defun get-window-flags (win)
   (let ((flags (sdl-get-window-flags win)))
     (autowrap:mask-keywords 'sdl-window-flags flags)))
+
+(defun get-window-pixel-format (win)
+  "Use this function to get the pixel format associated with the window."
+  (enum-key 'sdl-pixel-format (sdl-get-window-pixel-format win)))
 
 (declaim (inline get-window-id))
 (defun get-window-id (win)

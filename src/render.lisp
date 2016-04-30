@@ -105,21 +105,31 @@ the SDL_Renderer structure."
   (check-rc (sdl2-ffi.functions:sdl-render-copy renderer texture source-rect dest-rect)))
 
 (defun render-copy-ex (renderer texture &key source-rect dest-rect angle center flip)
+  "Use this function to copy a portion of the texture to the current rendering target, optionally rotating it by angle around the given center and also flipping it top-bottom and/or left-right."
   (check-rc (sdl2-ffi.functions:sdl-render-copy-ex
-             renderer texture source-rect dest-rect angle center
+             renderer
+             texture
+             source-rect
+             dest-rect
+             (coerce (or angle 0) 'double-float)
+             center
              (mask-apply 'sdl-renderer-flip flip))))
 
 (defun set-render-draw-color (renderer r g b a)
   "Use this function to set the color used for drawing operations (Rect, Line and Clear)."
   (check-rc (sdl2-ffi.functions:sdl-set-render-draw-color renderer r g b a)))
 
-(defun set-texture-blend-mode (renderer texture blend-mode)
+(defun set-texture-blend-mode (texture blend-mode)
   "Use this function to set the blend mode for a texture, used by SDL_RenderCopy()."
   (check-rc (sdl2-ffi.functions:sdl-set-texture-blend-mode texture blend-mode)))
 
 (defun set-render-draw-blend-mode (renderer blend-mode)
   "Use this function to set the blend mode used for drawing operations (Fill and Line)."
   (check-rc (sdl2-ffi.functions:sdl-set-render-draw-blend-mode renderer blend-mode)))
+
+(defun set-render-target (renderer texture)
+  "Use this function to set a texture as the current rendering target."
+  (check-rc (sdl2-ffi.functions:sdl-set-render-target renderer texture)))
 
 (defun render-draw-line (renderer x1 y1 x2 y2)
   "Use this function to draw a line on the current rendering target."
@@ -132,6 +142,13 @@ the SDL_Renderer structure."
    (sdl2-ffi.functions:sdl-render-draw-lines renderer
                                              points
                                              num-points)))
+
+(defun render-draw-point (renderer x y)
+  "Use this function to draw a point on the current rendering target."
+  (check-rc
+   (sdl2-ffi.functions:sdl-render-draw-point renderer
+                                             x
+                                             y)))
 
 (defun render-draw-points (renderer points num-points)
   "Use this function to draw multiple points on the current rendering target."
@@ -164,6 +181,16 @@ rendering target with the drawing color."
                                              rects
                                              num-rects)))
 
+(defun render-set-viewport (renderer sdl-rect)
+  "Use this function to set the drawing area for rendering on the current target."
+  (check-rc (sdl2-ffi.functions:sdl-render-set-viewport renderer sdl-rect)))
+
+(defun render-get-viewport (renderer)
+  "Use this function to get the drawing area for the current target."
+  (let-rects (rect)
+    (sdl2-ffi.functions:sdl-render-get-viewport renderer (rect &))
+    rect))
+
 (defun render-clear (renderer)
   "Use this function to clear the current rendering target with the drawing color."
   (check-rc (sdl2-ffi.functions:sdl-render-clear renderer)))
@@ -181,10 +208,13 @@ about the specified renderer, and return it."
 
 ;; TODO SDL_GetRendererOutputSize
 (defun get-renderer-output-size (renderer)
-  (niy "SDL_GetRendererOutputSize()"))
+  (c-with ((x :int)
+           (y :int))
+    (sdl-get-renderer-output-size renderer (x &) (y &))
+    (values x y)))
 
 (defun query-texture (texture)
-  (c-with ((texture-format :uint32)
+  (c-with ((texture-format sdl2-ffi:uint32)
            (access :int)
            (width  :int)
            (height :int))
@@ -216,7 +246,7 @@ about the specified renderer, and return it."
   (sdl-collect
    (check-null (sdl-create-texture renderer
                                    (enum-value 'sdl-pixel-format pixel-format)
-                                   (enum-value 'sdl-texture-access access)
+                                   (enum-value 'sdl2-ffi:sdl-texture-access access)
                                    width height))
    (lambda (tex) (sdl-destroy-texture tex))))
 
@@ -226,6 +256,28 @@ about the specified renderer, and return it."
    (check-null (sdl-create-texture-from-surface renderer
 						surface))
    (lambda (tex) (sdl-destroy-texture tex))))
+
+(defun set-texture-color-mod (texture r g b)
+  "Use this function to set an additional color value multiplied into render copy operations."
+  (check-rc (sdl-set-texture-color-mod texture r g b)))
+
+(defun get-texture-color-mod (texture)
+  "Use this function to get the additional color value multiplied into render copy operations."
+  (c-with ((r :unsigned-short)
+           (g :unsigned-short)
+           (b :unsigned-short))
+    (check-rc (sdl-get-texture-color-mod texture (r &) (g &) (b &)))
+    (values r g b)))
+
+(defun set-texture-alpha-mod (texture alpha)
+  "Use this function to set an additional alpha value multiplied into render copy operations."
+  (check-rc (sdl-set-texture-alpha-mod texture alpha)))
+
+(defun get-texture-alpha-mod (texture)
+  "Use this function to get the additional alpha value multiplied into render copy operations."
+  (c-with ((alpha :unsigned-short))
+    (check-rc (sdl-get-texture-alpha-mod texture (alpha &)))
+    alpha))
 
 (defun destroy-texture (texture)
   "Use this function to destroy the specified texture."

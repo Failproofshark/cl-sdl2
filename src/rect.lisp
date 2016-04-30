@@ -116,6 +116,9 @@ will be garbage collected as needed."
           (rect :h) h)
     rect))
 
+(define-struct-accessors (rect sdl2-ffi:sdl-rect)
+  :x :y (width :w) (height :h))
+
 (defmethod print-object ((rect sdl2-ffi:sdl-rect) stream)
   (c-rect (rect)
     (print-unreadable-object (rect stream :type t :identity t)
@@ -150,6 +153,15 @@ SDL_Rect allocating loops."
 
 ;; I hope trivial-garbage deals with these things correctly...
 
+(defmacro let-rects (bindings &body body)
+  (flet ((make-rect-list (bindings)
+           (loop for rect in bindings collect (list rect 'sdl2-ffi:sdl-rect)))
+         (make-collect-calls (bindings)
+           (loop for rect in bindings collect (list 'sdl-collect rect))))
+    `(c-let (,@(make-rect-list bindings))
+       ,@(make-collect-calls bindings)
+       ,@body)))
+
 ;; used as a helper for with-rects
 (defmacro %with-rect ((binding) &body body)
   (cond
@@ -178,9 +190,9 @@ structures. Raw symbols are bound to (make-rect 0 0 0 0).
       #<SDL-FFI:SDL-RECT x 5 y 10 w 15 h 20>
       #<SDL-FFI:SDL-RECT x 2 y 2 w 3 d 40>)"
   (if (null bindings)
+      `(progn ,@body)
       `(%with-rect (,(car bindings))
-         (with-rects ,(cdr bindings) ,@body))
-      `(progn ,@body)))
+         (with-rects ,(cdr bindings) ,@body))))
 
 (defun rects* (&rest rects)
   "Return a pointer to SDL_Rect and the number of elements in it."

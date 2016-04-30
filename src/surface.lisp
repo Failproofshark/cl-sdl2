@@ -17,11 +17,8 @@
   (c-ref surface sdl2-ffi:sdl-surface :pitch))
 
 (defun surface-format-format (surface)
-  (c-ref (c-ref surface
-                sdl2-ffi:sdl-surface
-                :format *)
-         sdl2-ffi:sdl-pixel-format
-         :format))
+  (enum-key '(:enum (sdl-pixel-format))
+            (c-ref surface sdl2-ffi:sdl-surface :format :format)))
 
 (defun create-rgb-surface (width height depth
                            &key (r-mask 0) (g-mask 0) (b-mask 0) (a-mask 0)
@@ -46,7 +43,7 @@
 (defun load-bmp (filename)
   (sdl-collect
    ;; Note, SDL_LoadBMP is a macro in SDL_surface.h that is exactly this
-   (sdl-load-bmp-rw (sdl-rw-from-file filename "rb") 1)
+   (check-null (sdl-load-bmp-rw (sdl-rw-from-file (namestring (merge-pathnames filename)) "rb") 1))
    (lambda (s) (sdl-free-surface s))))
 
 (defun convert-surface (surface format &key (flags 0))
@@ -70,3 +67,13 @@
 
 (defun fill-rect (surface-dst rect color)
   (sdl-fill-rect surface-dst rect color))
+
+(defun set-color-key (surface flag key)
+  "Use this function to set the color key (transparent pixel) in a surface."
+  (check-rc (sdl-set-color-key surface (autowrap:enum-value 'sdl2-ffi:sdl-bool flag) key)))
+
+(defun get-color-key (surface)
+  "Use this function to get the color key (transparent pixel) for a surface."
+  (c-let ((key sdl2-ffi:uint32))
+    (check-rc (sdl-get-color-key surface (key &)))
+    key))

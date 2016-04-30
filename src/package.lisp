@@ -18,6 +18,7 @@
   (:export ;; API
            #:init
            #:quit
+           #:was-init
            #:with-init
            #:in-main-thread
            #:version
@@ -33,6 +34,7 @@
            #:get-num-display-modes
            #:get-current-display-mode
            #:get-display-mode
+           #:get-display-bounds
            #:windowpos-undefined
            #:windowpos-centered
            #:windowpos-from-coord
@@ -52,9 +54,11 @@
            #:set-window-position
            #:get-window-title
            #:get-window-size
+           #:get-window-aspect-ratio
            #:get-window-surface
            #:get-window-position
            #:get-window-flags
+           #:get-window-pixel-format
            #:get-window-id
            #:enable-screensaver
            #:disable-screensaver
@@ -93,6 +97,7 @@
            #:key-up-p
            #:scancode-value
            #:scancode
+           #:scancode-symbol
            #:mod-value
            #:sym-value
            #:scancode=
@@ -145,6 +150,10 @@
            #:with-points
            #:points*
            #:make-rect
+           #:rect-x
+           #:rect-y
+           #:rect-width
+           #:rect-height
            #:copy-rect
            #:copy-into-rect
            #:free-rect
@@ -157,9 +166,12 @@
            #:union-rect
 
            ;; render.lisp
+           #:render-set-viewport
+           #:render-get-viewport
            #:render-clear
            #:render-draw-line
            #:render-draw-lines
+           #:render-draw-point
            #:render-draw-points
            #:render-draw-rect
            #:render-draw-rects
@@ -168,6 +180,7 @@
            #:set-render-draw-color
            #:set-texture-blend-mode
            #:set-render-draw-blend-mode
+           #:set-render-target
            #:render-copy
            #:render-copy-ex
            #:render-present
@@ -182,10 +195,14 @@
            #:get-renderer-info
            ;#:get-renderer-output-size
            #:create-texture
-	   #:create-texture-from-surface
-	   #:query-texture
-	   #:texture-width
-	   #:texture-height
+           #:create-texture-from-surface
+           #:set-texture-color-mod
+           #:get-texture-color-mod
+           #:set-texture-alpha-mod
+           #:get-texture-alpha-mod
+           #:query-texture
+           #:texture-width
+           #:texture-height
            #:destroy-texture
            #:lock-texture
            #:unlock-texture
@@ -227,6 +244,8 @@
            #:blit-surface
            #:blit-scaled
            #:fill-rect
+           #:set-color-key
+           #:get-color-key
 
            ;; timer.lisp
            #:delay
@@ -243,6 +262,9 @@
            #:mmx-p #:alti-vec-p #:rdtsc-p
            #:sse-p #:sse2-p #:sse3-p #:sse41-p #:sse42-p
            #:power-info
+
+           ;; syswm.lisp
+           #:get-window-wm-info
 
            ;;rwops.lisp
            :rw-from-file
