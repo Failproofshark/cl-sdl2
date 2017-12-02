@@ -2,9 +2,9 @@
 
 (push :sdl2 *features*)
 
-(defpackage #:sdl2-ffi)
-(defpackage #:sdl2-ffi.accessors)
-(defpackage #:sdl2-ffi.functions
+(uiop:define-package #:sdl2-ffi)
+(uiop:define-package #:sdl2-ffi.accessors)
+(uiop:define-package #:sdl2-ffi.functions
   (:export #:sdl-quit))
 
 (defpackage #:sdl2
@@ -109,7 +109,9 @@
            #:get-key-name
            #:scancode-name
            #:scancode-key-name
-
+	   #:start-text-input
+	   #:stop-text-input
+	   
            ;; mouse.lisp
            #:warp-mouse-in-window
            #:hide-cursor
@@ -146,6 +148,8 @@
 
            ;; rect.lisp
            #:make-point
+	   #:point-x
+	   #:point-y
            #:copy-point
            #:copy-into-point
            #:free-point
@@ -195,7 +199,7 @@
            #:destroy-renderer
            #:get-renderer
            #:get-renderer-info
-           ;#:get-renderer-output-size
+           #:get-renderer-output-size
            #:create-texture
            #:create-texture-from-surface
            #:set-texture-color-mod
@@ -248,6 +252,10 @@
            #:fill-rect
            #:set-color-key
            #:get-color-key
+           #:set-alpha-mod
+           #:get-alpha-mod
+           #:set-color-mod
+           #:get-color-mod
 
            ;; timer.lisp
            #:delay
