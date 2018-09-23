@@ -35,10 +35,10 @@
                  (display-mode :refresh-rate))))
 
 (defun get-display-bounds (display-index)
-  "Use this function to get the desktop area represented by a display, with the primary display located at 0,0."
+  "Use this function to get the desktop area represented by a display, with the primary display
+located at 0,0."
   (let-rects (rect)
-    (check-rc
-     (sdl2-ffi.functions:sdl-get-display-bounds display-index (rect &)))
+    (check-rc (sdl2-ffi.functions:sdl-get-display-bounds display-index (rect &)))
     rect))
 
 (autowrap:define-bitmask-from-enum
@@ -49,12 +49,10 @@
     (sdl-gl-attr sdl2-ffi:sdl-glattr))
 
 (defun windowpos-undefined (&optional (display 0))
-  (logior sdl2-ffi:+sdl-windowpos-undefined-mask+
-          display))
+  (logior sdl2-ffi:+sdl-windowpos-undefined-mask+ display))
 
 (defun windowpos-centered (&optional (display 0))
-  (logior sdl2-ffi:+sdl-windowpos-centered-mask+
-          display))
+  (logior sdl2-ffi:+sdl-windowpos-centered-mask+ display))
 
 (defun windowpos-from-coord (n)
   (case n
@@ -66,36 +64,28 @@
   (let ((window-flags (mask-apply 'sdl-window-flags flags))
         (x (windowpos-from-coord x))
         (y (windowpos-from-coord y)))
-    (sdl-collect
-     (check-nullptr (sdl-create-window title x y w h window-flags))
-     (lambda (w) (sdl-destroy-window w)))))
+    (check-nullptr (sdl-create-window title x y w h window-flags))))
 
 (defun destroy-window (win)
-  (sdl-cancel-collect win)
   (sdl-destroy-window win)
   (autowrap:invalidate win)
   (values))
 
-(defmacro with-window ((win &key (title "SDL2 Window")
-                            (x :centered) (y :centered)
-                            (w 800) (h 600) flags)
+(defmacro with-window ((win
+                        &key (title "SDL2 Window") (x :centered) (y :centered) (w 800) (h 600) flags)
                        &body body)
-  `(let ((,win (create-window :title ,title
-                              :x ,x :y ,y :w ,w :h ,h
-                              :flags ,flags)))
+  `(let ((,win (create-window :title ,title :x ,x :y ,y :w ,w :h ,h :flags ,flags)))
      (unwind-protect (progn ,@body)
        (destroy-window ,win))))
 
 (defmacro with-everything ((&key window gl) &body body)
   (assert (and window gl))
   (let ((window (if (symbolp window) (list window) window)))
-    (destructuring-bind (win &key (title "SDL2 Window")
-                         (x :centered) (y :centered)
-                         (w 800) (h 600) (flags ''(:shown :opengl))
-                         (fullscreen nil)) window
+    (destructuring-bind (win &key (title "SDL2 Window") (x :centered) (y :centered) (w 800) (h 600)
+                               (flags ''(:shown :opengl)) (fullscreen nil))
+        window
       `(with-init (:everything)
-         (with-window (,win :title ,title :x ,x :y ,y :w ,w :h ,h
-                            :flags ,flags)
+         (with-window (,win :title ,title :x ,x :y ,y :w ,w :h ,h :flags ,flags)
            (with-gl-context (,gl ,win)
              (set-window-fullscreen ,win ,fullscreen)
              ,@body))))))
@@ -129,9 +119,9 @@
   sdl2-ffi:+sdl-window-fullscreen-desktop+)
 
 (defun set-window-fullscreen (win fullscreen-value)
-  "`FULLSCREEN-VALUE` of `t` or `:fullscreen` is \"regular\" fullscreen,
-`SDL_WINDOW_FULLSCREEN`.  Specifying `:windowed` or `:desktop` is
-\"windowed\" fullscreen, using `SDL_WINDOW_FULLSCREEN_DESKTOP`."
+  "`FULLSCREEN-VALUE` of `t` or `:fullscreen` is \"regular\" fullscreen, `SDL_WINDOW_FULLSCREEN`.
+Specifying `:windowed` or `:desktop` is \"windowed\" fullscreen, using
+`SDL_WINDOW_FULLSCREEN_DESKTOP`."
   (let ((flag (case fullscreen-value
                 ((nil))
                 ((:desktop :windowed) :fullscreen-desktop)
@@ -181,8 +171,6 @@
 (defun get-window-id (win)
   (sdl-get-window-id win))
 
- ;; Screensaver
-
 (defun enable-screensaver ()
   (sdl-enable-screen-saver))
 
@@ -192,15 +180,10 @@
 (defun screensaver-enabled-p ()
   (sdl-is-screen-saver-enabled))
 
- ;; OpenGL
-
 (defun gl-create-context (win)
-  (sdl-collect
-   (check-nullptr (sdl-gl-create-context win))
-   (lambda (x) (sdl-gl-delete-context x))))
+  (check-nullptr (sdl-gl-create-context win)))
 
 (defun gl-delete-context (gl-context)
-  (sdl-cancel-collect gl-context)
   (sdl-gl-delete-context gl-context)
   (autowrap:invalidate gl-context)
   (values))
@@ -229,21 +212,18 @@
 
 (defun gl-get-attr (attr)
   (with-foreign-object (value :int)
-    (check-rc (sdl-gl-get-attribute
-               (autowrap:mask 'sdl-gl-attr attr) value))
+    (check-rc (sdl-gl-get-attribute (autowrap:mask 'sdl-gl-attr attr) value))
     (mem-ref value :int)))
 
 (defun gl-get-attrs (&rest attrs)
   (mapcan #'list attrs (mapcar #'gl-get-attr attrs)))
 
 (defun gl-set-attr (attr value)
-  (check-rc (sdl-gl-set-attribute
-             (autowrap:mask 'sdl-gl-attr attr)
-             value)))
+  (check-rc (sdl-gl-set-attribute (autowrap:mask 'sdl-gl-attr attr) value)))
 
 (defun gl-set-attrs (&rest attr-plist)
-  (loop for (attr value) on attr-plist by #'cddr
-     do (gl-set-attr attr value)))
+  (loop :for (attr value) :on attr-plist :by #'cddr
+        :do (gl-set-attr attr value)))
 
 (defun gl-get-proc-address (proc-name)
   (sdl-gl-get-proc-address proc-name))
